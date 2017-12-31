@@ -20,6 +20,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
   private static String TAG = "MainActivity";
   private static int REQUEST_SELECT_IMAGE = 1000;
+  private static int REQUEST_CROP_IMAGE = 1001;
 
   private Button bLoadImage;
   private ImageView ivImagePreview;
@@ -64,13 +65,23 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         return;
       }
 
-      Uri uri = data.getData();
-      try {
-        Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-        ivImagePreview.setImageBitmap(bitmap);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      Uri imgUri = data.getData();
+
+      Intent cropIntent = new Intent("com.android.camera.action.CROP");
+      cropIntent.setDataAndType(imgUri, "image/*");
+      cropIntent.putExtra("crop", "true");
+      cropIntent.putExtra("aspectX", 4);
+      cropIntent.putExtra("aspectY", 5);
+      cropIntent.putExtra("outputX", 450);
+      cropIntent.putExtra("outputY", 563);
+      cropIntent.putExtra("scaleUpIfNeeded", true);
+      cropIntent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
+      cropIntent.putExtra("return-data", true);
+      startActivityForResult(cropIntent, REQUEST_CROP_IMAGE);
+
+    } else if (requestCode == REQUEST_CROP_IMAGE && resultCode == Activity.RESULT_OK) {
+      Bitmap mBitmap = (Bitmap) data.getExtras().get("data");
+      ivImagePreview.setImageBitmap(mBitmap);
     }
   }
 }
