@@ -1,10 +1,16 @@
 package com.example.karan.imageselectandcrop;
 
+import android.Manifest;
+import android.Manifest.permission;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Debug;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +27,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   private static String TAG = "MainActivity";
   private static int REQUEST_SELECT_IMAGE = 1000;
   private static int REQUEST_CROP_IMAGE = 1001;
+  private static final int REQUEST_PERMISSIONS = 1002;
 
   private Button bLoadImage;
   private ImageView ivImagePreview;
@@ -34,6 +41,23 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     ivImagePreview = findViewById(R.id.ivImagePreview);
 
     bLoadImage.setOnClickListener(this);
+
+    checkForPermissions();
+  }
+
+  private void checkForPermissions() {
+    // Assume thisActivity is the current activity
+    int writeExternalStorage = ContextCompat.checkSelfPermission(this,
+        permission.WRITE_EXTERNAL_STORAGE);
+    int readExternalStorage = ContextCompat
+        .checkSelfPermission(this, permission.READ_EXTERNAL_STORAGE);
+
+    if (writeExternalStorage == PackageManager.PERMISSION_DENIED
+        || readExternalStorage == PackageManager.PERMISSION_DENIED) {
+      ActivityCompat.requestPermissions(this,
+          new String[]{permission.WRITE_EXTERNAL_STORAGE, permission.READ_EXTERNAL_STORAGE},
+          REQUEST_PERMISSIONS);
+    }
   }
 
   private void onLoadButtonClick() {
@@ -82,6 +106,24 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     } else if (requestCode == REQUEST_CROP_IMAGE && resultCode == Activity.RESULT_OK) {
       Bitmap mBitmap = (Bitmap) data.getExtras().get("data");
       ivImagePreview.setImageBitmap(mBitmap);
+    }
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode,
+      String permissions[], int[] grantResults) {
+    switch (requestCode) {
+      case REQUEST_PERMISSIONS: {
+        // If request is cancelled, the result arrays are empty.
+        if (grantResults.length > 0
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+          Log.d(TAG, "Permissions were granted");
+        } else {
+          Log.d(TAG, "Permissions were denied");
+        }
+        return;
+      }
     }
   }
 }
