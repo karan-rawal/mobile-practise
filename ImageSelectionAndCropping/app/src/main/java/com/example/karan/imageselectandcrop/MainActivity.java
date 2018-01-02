@@ -3,11 +3,16 @@ package com.example.karan.imageselectandcrop;
 import android.Manifest;
 import android.Manifest.permission;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.os.Debug;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -18,15 +23,17 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
+import com.theartofdev.edmodo.cropper.CropImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener {
 
   private static String TAG = "MainActivity";
   private static int REQUEST_SELECT_IMAGE = 1000;
-  private static int REQUEST_CROP_IMAGE = 1001;
   private static final int REQUEST_PERMISSIONS = 1002;
 
   private Button bLoadImage;
@@ -88,26 +95,45 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         Log.e(TAG, "Image selection data was null");
         return;
       }
-
       Uri imgUri = data.getData();
 
-      Intent cropIntent = new Intent("com.android.camera.action.CROP");
-      cropIntent.setDataAndType(imgUri, "image/*");
-      cropIntent.putExtra("crop", "true");
-      cropIntent.putExtra("aspectX", 4);
-      cropIntent.putExtra("aspectY", 5);
-      cropIntent.putExtra("outputX", 450);
-      cropIntent.putExtra("outputY", 563);
-      cropIntent.putExtra("scaleUpIfNeeded", true);
-      cropIntent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
-      cropIntent.putExtra("return-data", true);
-      startActivityForResult(cropIntent, REQUEST_CROP_IMAGE);
+      cropImage(imgUri);
 
-    } else if (requestCode == REQUEST_CROP_IMAGE && resultCode == Activity.RESULT_OK) {
-      Bitmap mBitmap = (Bitmap) data.getExtras().get("data");
+    } else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+      CropImage.ActivityResult result = CropImage.getActivityResult(data);
+      Uri resultUri = result.getUri();
+      Bitmap mBitmap = null;
+      try {
+        mBitmap = MediaStore.Images.Media.getBitmap(getContentResolver() , resultUri);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
       ivImagePreview.setImageBitmap(mBitmap);
     }
   }
+
+  private void cropImage(Uri imgUri) {
+    CropImage.activity(imgUri)
+        .start(this);
+  }
+
+  // without library
+//  private void cropImage(Uri imgUri) {
+//    Intent cropIntent = new Intent("com.android.camera.action.CROP");
+//    cropIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+//    cropIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//    cropIntent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+//    cropIntent.setDataAndType(imgUri, "image/*");
+//    cropIntent.putExtra("crop", "true");
+//    cropIntent.putExtra("aspectX", 4);
+//    cropIntent.putExtra("aspectY", 5);
+//    cropIntent.putExtra("outputX", 450);
+//    cropIntent.putExtra("outputY", 563);
+//    cropIntent.putExtra("scaleUpIfNeeded", true);
+//    cropIntent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
+//    cropIntent.putExtra("return-data", true);
+//    startActivityForResult(cropIntent, REQUEST_CROP_IMAGE);
+//  }
 
   @Override
   public void onRequestPermissionsResult(int requestCode,
